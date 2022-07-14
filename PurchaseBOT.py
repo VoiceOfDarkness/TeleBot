@@ -1,33 +1,48 @@
-from aiogram import Bot, types
+import logging
+import os
+from aiogram import Bot
 from aiogram.dispatcher import Dispatcher
-from aiogram.utils import executor
-
-import os 
-
+from aiogram.utils.executor import start_webhook
+from aiogram import Bot, types
 
 
-bot = Bot(token=os.getenv('TOKEN'))
+TOKEN = os.getenv('89N3PDyZzakoH7W6n8ZrjGDDktjh8iWFG6eKRvi3kvpQ')
+bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
-@dp.message_handler(commands="special_buttons")
-async def cmd_special_buttons(message: types.Message):
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    keyboard.add(types.KeyboardButton(text="Запросить геолокацию", request_location=True))
-    keyboard.add(types.KeyboardButton(text="Запросить контакт", request_contact=True))
-    keyboard.add(types.KeyboardButton(text="Создать викторину",
-    request_poll=types.KeyboardButtonPollType(type=types.PollType.QUIZ)))
-    await message.answer("Выберите действие:", reply_markup=keyboard)
+HEROKU_APP_NAME = os.getenv('telebot6900')
+
+# webhook settings
+WEBHOOK_HOST = f'https://{HEROKU_APP_NAME}.herokuapp.com'
+WEBHOOK_PATH = f'/webhook/{TOKEN}'
+WEBHOOK_URL = f'{WEBHOOK_HOST}{WEBHOOK_PATH}'
+
+# webserver settings
+WEBAPP_HOST = '0.0.0.0'
+WEBAPP_PORT = os.getenv('PORT', default=8000)
 
 
-# @dp.message_handler()
-# async def echo_send(message : types.Message):
-#     if message.text == 'привет':
-#         await message.answer('Ну здорово, Хуесос')
-        
-    # # await message.reply(message.text)
-    # await bot.send_message(message.from_user.id, message.text)
+async def on_startup(dispatcher):
+    await bot.set_webhook(WEBHOOK_URL, drop_pending_updates=True)
 
 
+async def on_shutdown(dispatcher):
+    await bot.delete_webhook()
 
 
-executor.start_polling(dp, skip_updates=True)
+@dp.message_handler()
+async def echo(message: types.Message):
+    await message.answer(message.text)
+
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+    start_webhook(
+        dispatcher=dp,
+        webhook_path=WEBHOOK_PATH,
+        skip_updates=True,
+        on_startup=on_startup,
+        on_shutdown=on_shutdown,
+        host=WEBAPP_HOST,
+        port=WEBAPP_PORT,
+    )

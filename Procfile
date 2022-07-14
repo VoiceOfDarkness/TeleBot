@@ -1,1 +1,1 @@
-worker: python PurchaseBOT.py
+web: python PurchaseBOT.py
