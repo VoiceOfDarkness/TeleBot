@@ -1,1 +1,1 @@
-web: python PurchaseBOT.py
+web: gunicorn app:app
